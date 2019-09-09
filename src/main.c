@@ -18,6 +18,7 @@
 #include "tim.h"
 #include "spi.h"
 #include "comm.h"
+#include "memory.h"
 
 #include <stdio.h>
 // #include <string.h>
@@ -111,9 +112,7 @@ int main(void)
         //     OE_HC595_OFF;
         // else
         //     OE_HC595_ON;
-
-        SPI_Send_Multiple(0x80);
-        SPI_Send_Multiple(0x01);
+        MEM_SetAddress(0x800001);
         
     }
 

@@ -1,5 +1,5 @@
 //--------------------------------------------------
-// #### PROYECTO LIGHT TRETAMENT - Custom Board ####
+// #### MEMORY FLASHER 29LV040   - Custom Board ####
 // ##
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags

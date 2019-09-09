@@ -68,7 +68,6 @@ void SPI_Config(void)
 unsigned char SPI_Send_Receive (unsigned char a)
 {
     unsigned char rx;
-    unsigned char j;
 
     //primero limpio buffer rx spi
     while ((SPI1->SR & SPI_SR_RXNE) == 1)
@@ -82,7 +81,7 @@ unsigned char SPI_Send_Receive (unsigned char a)
     *(__IO uint8_t *) ((uint32_t)SPI1 + (uint32_t)0x0C) = a; //evito enviar 16bits problemas de compilador
 
     //espero tener el dato en RX
-    for (j = 0; j < 150; j++)
+    for (unsigned char j = 0; j < 150; j++)
     {
     	asm("nop");
     }
