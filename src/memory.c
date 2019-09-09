@@ -12,6 +12,7 @@
 #include "memory.h"
 #include "spi.h"
 #include "hard.h"
+#include "comm.h"
 
 /* Externals ------------------------------------------------------------------*/
 
@@ -45,9 +46,30 @@ void MEM_SetAddress (unsigned int addr)
 }
 
 
+unsigned char MEM_GetManufacturer (silicon_t * m_info)
+{
+    m_info->manufacturer = 194;
+    return resp_ok;
+}
+
+
+unsigned char MEM_GetSilicon (silicon_t * m_info)
+{
+    m_info->silicon = 79;
+    return resp_ok;
+}
+
+
+unsigned char MEM_GetProtectedSectors (silicon_t * m_info)
+{
+    m_info->protected = 0xFF;
+    return resp_ok;
+}
+
+
 void MEM_LowDelay (void)
 {
-    for (unsigned char j = 0; j < 150; j++)
+    for (unsigned char j = 0; j < 30; j++)
     {
     	asm("nop");
     }

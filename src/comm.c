@@ -13,6 +13,7 @@
 #include "uart.h"
 #include "hard.h"
 
+#include "memory.h"
 #include "utils.h"
 
 #include <string.h>
@@ -70,7 +71,8 @@ resp_t InterpretarMsg (void)
     char * pStr = buffMessages;
     unsigned int address = 0;
     unsigned int bytes_to_read = 0;
-    char b_vect [10] = { 0 };
+    silicon_t mem_data;
+    char b_vect [20] = { 0 };
 
     
     //-- Read Actions
@@ -124,20 +126,32 @@ resp_t InterpretarMsg (void)
     //-- Silicon Actions
     else if (strncmp(pStr, s_get_sid, sizeof(s_get_sid) - 1) == 0)
     {
-        Usart1Send("SID\n");
-        resp = resp_ok;
+        resp = MEM_GetSilicon(&mem_data);
+        if (resp == resp_ok)
+        {
+            sprintf(b_vect, "sid: %x\n", mem_data.silicon);
+            Usart1Send(b_vect);
+        }
     }
 
     else if (strncmp(pStr, s_get_mid, sizeof(s_get_mid) - 1) == 0)
     {
-        Usart1Send("MID\n");        
-        resp = resp_ok;
+        resp = MEM_GetManufacturer(&mem_data);
+        if (resp == resp_ok)
+        {
+            sprintf(b_vect, "mid: %x\n", mem_data.manufacturer);
+            Usart1Send(b_vect);
+        }
     }
 
     else if (strncmp(pStr, s_get_prot, sizeof(s_get_prot) - 1) == 0)
     {
-        Usart1Send("Protected Sectors\n");
-        resp = resp_ok;
+        resp = MEM_GetProtectedSectors(&mem_data);
+        if (resp == resp_ok)
+        {
+            sprintf(b_vect, "prot: %x\n", mem_data.protected);
+            Usart1Send(b_vect);
+        }
     }
 
     //-- Write Actions

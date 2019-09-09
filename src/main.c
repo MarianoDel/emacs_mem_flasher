@@ -106,14 +106,12 @@ int main(void)
     
     while (1)
     {
-        Wait_ms(20);
-        // SPI_Send_Single(0x80);
-        // if (OE_HC595)
-        //     OE_HC595_OFF;
-        // else
-        //     OE_HC595_ON;
-        MEM_SetAddress(0x800001);
-        
+        UpdateCommunications ();
+        if (!timer_standby)
+        {
+            timer_standby = 20;
+            MEM_SetAddress(0x800001);
+        }
     }
 
     //Hard Test LED
