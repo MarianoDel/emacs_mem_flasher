@@ -52,6 +52,11 @@ void GPIO_Config(void);
 void EXTIOff (void);
 void EXTIOn (void);
 
+void GPIO_PortAOutput (void);
+void GPIO_PortAInput (void);
+void GPIO_PortAWrite (unsigned char);
+unsigned char GPIO_PortARead (void);
+
 #endif    /* _GPIO_H_ */
 
 //--- end of file ---//

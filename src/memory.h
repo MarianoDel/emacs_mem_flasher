@@ -18,6 +18,10 @@ typedef struct {
 } silicon_t;
 
 //--- Exported constants ---//
+#define SECTORS_QTTY    8
+#define SECTORS_LENGHT    0x10000
+
+
 #define SA7_PROTECTED    0x80
 #define SA6_PROTECTED    0x40
 #define SA5_PROTECTED    0x20
@@ -36,6 +40,8 @@ unsigned char MEM_GetManufacturer (silicon_t *);
 unsigned char MEM_GetSilicon (silicon_t *);
 unsigned char MEM_GetProtectedSectors (silicon_t *);
 
+unsigned char MEM_ReadByte (unsigned int);
+void MEM_WriteByte (unsigned int, unsigned char);
 
 #endif    /* _MEMORY_H_ */
 

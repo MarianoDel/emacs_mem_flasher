@@ -166,4 +166,51 @@ inline void EXTIOn (void)
 	EXTI->IMR |= 0x00000100;
 }
 
+
+void GPIO_PortAOutput (void)
+{
+    unsigned long temp;
+
+    temp = GPIOA->MODER;	//2 bits por pin
+    temp &= 0xFFFF0000;		//PA7 - PA0 output
+    temp |= 0x00005555;
+    GPIOA->MODER = temp;
+
+}
+
+
+void GPIO_PortAInput (void)
+{
+    unsigned long temp;
+
+    temp = GPIOA->MODER;	//2 bits por pin
+    temp &= 0xFFFF0000;		//PA7 - PA0 input
+    temp |= 0x00000000;
+    GPIOA->MODER = temp;
+
+}
+
+
+void GPIO_PortAWrite (unsigned char a)
+{
+    unsigned short data = 0;
+    
+    data = GPIOA->ODR;
+    data &= 0xFF00;
+    data |= a;
+
+    GPIOA->ODR = data;
+}
+
+
+unsigned char GPIO_PortARead (void)
+{
+    unsigned short data = 0;
+
+    data = GPIOA->IDR & 0x00FF;
+    
+    return (unsigned char) data;
+}
+
+
 //--- end of file ---//

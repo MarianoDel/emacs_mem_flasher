@@ -66,28 +66,33 @@
 
 //-- End Of Defines For Configuration ---------------
 
-//GPIOA pin0    V_Sense_24V analog input
-//GPIOA pin1    V_Sense_12V analog input
-
-//GPIOA pin2    NC
-//GPIOA pin3    NC
-
+//GPIOA pin0    
+//GPIOA pin1    
+//GPIOA pin2    
+//GPIOA pin3    
 //GPIOA pin4
-#define EN_AUDIO ((GPIOA->ODR & 0x0010) != 0)
-#define EN_AUDIO_ON GPIOA->BSRR = 0x00000010
-#define EN_AUDIO_OFF GPIOA->BSRR = 0x00100000
-
-//GPIOA pin5    LM335_VO analog input
-
+//GPIOA pin5    
 //GPIOA pin6
-//GPIOA pin7
+//GPIOA pin7    eight bits bidirectional port
+
 //GPIOB pin0
 //GPIOB pin1    TIM3 CH1 - CH4
 
-//GPIOA pin8    TIM1 CH1
+//GPIOA pin8    
+#define CE ((GPIOA->ODR & 0x0100) == 0)
+#define CE_OFF GPIOA->BSRR = 0x00000100
+#define CE_ON GPIOA->BSRR = 0x01000000
 
-//GPIOA pin9    
-//GPIOA pin10    USART1
+//GPIOA pin9
+#define WE ((GPIOA->ODR & 0x0200) == 0)
+#define WE_OFF GPIOA->BSRR = 0x00000200
+#define WE_ON GPIOA->BSRR = 0x02000000
+
+//GPIOA pin10
+#define OE ((GPIOA->ODR & 0x0400) == 0)
+#define OE_OFF GPIOA->BSRR = 0x00000400
+#define OE_ON GPIOA->BSRR = 0x04000000
+
 
 //GPIOA pin11    TIM1 CH4
 
@@ -100,24 +105,17 @@
 //GPIOA pin14    NC
 
 //GPIOA pin15    
-#define CTRL_FAN1 ((GPIOA->ODR & 0x8000) != 0)
-#define CTRL_FAN1_ON GPIOA->BSRR = 0x00008000
-#define CTRL_FAN1_OFF GPIOA->BSRR = 0x80000000
 
 //GPIOB pin3     SPI CLK
 
 //GPIOB pin4     
 #define OE_HC595 ((GPIOB->ODR & 0x0010) == 0)
-#define OE_HC595_ON GPIOB->BSRR = 0x00100000
 #define OE_HC595_OFF GPIOB->BSRR = 0x00000010
+#define OE_HC595_ON GPIOB->BSRR = 0x00100000
 
 //GPIOB pin5     SPI MOSI
 
 //GPIOB pin6
-#define BUZZER ((GPIOB->ODR & 0x0040) != 0)
-#define BUZZER_ON GPIOB->BSRR = 0x00000040
-#define BUZZER_OFF GPIOB->BSRR = 0x00400000
-
 //GPIOB pin7    NC
 
 
