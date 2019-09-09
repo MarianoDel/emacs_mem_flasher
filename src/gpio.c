@@ -88,8 +88,8 @@ void GPIO_Config (void)
         GPIOB_CLK_ON;
 
     temp = GPIOB->MODER;	//2 bits por pin
-    temp &= 0xFFFF0030;		//PB0 PB1 (alternative) PB3 PB4 PB5 ; PB6 PB7 (alternative)
-    temp |= 0x0000A54A;
+    temp &= 0xFFFF003F;		//PB3 PB5 (alternative) PB4 output ; PB6 PB7 (alternative)
+    temp |= 0x0000A980;
     GPIOB->MODER = temp;
 
     temp = GPIOB->OTYPER;	//1 bit por pin
@@ -98,7 +98,7 @@ void GPIO_Config (void)
     GPIOB->OTYPER = temp;
 
     temp = GPIOB->OSPEEDR;	//2 bits por pin
-    temp &= 0xFFFFC030;
+    temp &= 0xFFFFC03F;        //PB3 PB4 PB5 PB6
     temp |= 0x00000000;		//low speed
     GPIOB->OSPEEDR = temp;
 

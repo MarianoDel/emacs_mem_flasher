@@ -165,8 +165,8 @@ resp_t InterpretarMsg (void)
             }
         }
         address = atoi(b_vect);
-        sprintf(b_vect, "a: %x ", address);
-        Usart1Send(b_vect);
+        // sprintf(b_vect, "a: %x ", address);
+        // Usart1Send(b_vect);
         
         memset(b_vect, 0, sizeof(b_vect));
 
@@ -182,8 +182,8 @@ resp_t InterpretarMsg (void)
             }
         }
         bytes_to_read = atoi(b_vect);
-        sprintf(b_vect, "b: %x\n", bytes_to_read);
-        Usart1Send(b_vect);
+        // sprintf(b_vect, "b: %x\n", bytes_to_read);
+        // Usart1Send(b_vect);
         
         if ((address + bytes_to_read) <= 0x0080000)
             resp = resp_ok;

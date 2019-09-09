@@ -89,6 +89,7 @@ SRC += ./src/comm.c
 # SRC += ./src/signals.c
 # SRC += ./src/adc.c
 SRC += ./src/uart.c
+SRC += ./src/spi.c
 # SRC += ./src/dsp.c
 # SRC += ./src/dma.c
 SRC += ./src/hard.c

@@ -16,7 +16,7 @@
 
 #include "core_cm0.h"
 #include "tim.h"
-
+#include "spi.h"
 #include "comm.h"
 
 #include <stdio.h>
@@ -93,9 +93,28 @@ int main(void)
 #endif
 
     WelcomeCodeFeatures();
+
+    //Hard Test Communications
+    // while (1)
+    // {
+    //     UpdateCommunications ();
+    // }
+
+    //Hard Test SPI
+    SPI_Config();
+    
     while (1)
     {
-        UpdateCommunications ();
+        Wait_ms(20);
+        // SPI_Send_Single(0x80);
+        // if (OE_HC595)
+        //     OE_HC595_OFF;
+        // else
+        //     OE_HC595_ON;
+
+        SPI_Send_Multiple(0x80);
+        SPI_Send_Multiple(0x01);
+        
     }
 
     //Hard Test LED
