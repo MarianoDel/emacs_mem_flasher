@@ -155,4 +155,26 @@ unsigned char MEM_ReadByte (unsigned int addr)
     return data;
 }
 
+
+void MEM_WriteByte (unsigned int addr, unsigned char data)
+{
+    unsigned char check = 0;
+    
+    MEM_SetByte(0x555, 0xAA);
+    MEM_SetByte(0x2AA, 0x55);
+    MEM_SetByte(0x555, 0xA0);
+
+    MEM_SetByte(addr, data);
+
+    MEM_FastDelay();
+    GPIO_PortAInput();
+
+    data &= 0x80;
+    do {
+        check = GPIO_PortARead();
+        check &= 0x80;
+    }
+    while (check != data);
+}
+
 //--- end of file ---//

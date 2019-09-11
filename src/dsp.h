@@ -32,4 +32,5 @@ void MA8Circular_Start (void);
 void MA8Circular_Reset (void);
 unsigned short MA8Circular (unsigned short);
 
+unsigned short Compute_CRC16_Simple(unsigned char *, unsigned char, unsigned short);
 #endif /* _DSP_H_ */

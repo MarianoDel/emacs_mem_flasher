@@ -33,7 +33,10 @@ volatile unsigned short timer_led = 0;
 
 //-- Usart externals ---------------------------------
 volatile unsigned char usart1_have_data;
+volatile unsigned char usart1_timeout;
 
+//-- Comms externals ---------------------------------
+volatile unsigned short comms_in_binary_timeout = 0;
 
 // Global Variables ----------------------------------
 //-- Timers globals ----------------------------------
@@ -347,6 +350,12 @@ void TimingDelay_Decrement(void)
     if (timer_led)
         timer_led--;
 
+    if (usart1_timeout)
+        usart1_timeout--;
+
+    if (comms_in_binary_timeout)
+        comms_in_binary_timeout--;
+    
 }
 
 //--- end of file ---//

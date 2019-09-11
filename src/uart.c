@@ -28,6 +28,7 @@
 
 //--- Externals variables ---//
 extern volatile unsigned char usart1_have_data;
+extern volatile unsigned char usart1_timeout;
 
 //--- Private variables ---//
 volatile unsigned char * ptx1;
@@ -36,15 +37,14 @@ volatile unsigned char * prx1;
 volatile unsigned char tx1buff[SIZEOF_TXDATA];
 volatile unsigned char rx1buff[SIZEOF_RXDATA];
 
+void (* pUsartHandler) (unsigned char);
 
-//Reception buffer.
+// Module Private Functions ----------------------------------------------------
+void UsartIntTextHandler (unsigned char);
+void UsartIntBinaryHandler (unsigned char);
 
-//Transmission buffer.
 
-//--- Private function prototypes ---//
-//--- Private functions ---//
-
-//--- Exported functions ---//
+// Module Function Definition --------------------------------------------------
 unsigned char ReadUsart1Buffer (unsigned char * bout, unsigned short max_len)
 {
     unsigned int len;
@@ -55,7 +55,6 @@ unsigned char ReadUsart1Buffer (unsigned char * bout, unsigned short max_len)
     {
         //el prx1 siempre llega adelantado desde la int, lo corto con un 0
         *prx1 = '\0';
-        prx1++;
         len += 1;
         memcpy(bout, (unsigned char *) rx1buff, len);
     }
@@ -80,28 +79,7 @@ void USART1_IRQHandler(void)
     {
         dummy = USART1->RDR & 0x0FF;
 
-        if (prx1 < &rx1buff[SIZEOF_RXDATA - 1])
-        {
-            if ((dummy == '\n') || (dummy == '\r') || (dummy == 26))		//26 es CTRL-Z
-            {
-                *prx1 = '\0';
-                usart1_have_data = 1;
-#ifdef USE_LED_USART1_END_OF_PCKT
-                if (LED)
-                    LED_OFF;
-                else
-                    LED_ON;
-#endif
-
-            }
-            else
-            {
-                *prx1 = dummy;
-                prx1++;
-            }
-        }
-        else
-            prx1 = rx1buff;    //soluciona problema bloqueo con garbage
+        pUsartHandler(dummy);            
     }
 
     /* USART in Transmit mode -------------------------------------------------*/
@@ -139,6 +117,7 @@ void Usart1Send (char * send)
     Usart1SendUnsigned((unsigned char *) send, i);
 }
 
+
 void Usart1SendUnsigned(unsigned char * send, unsigned char size)
 {
     if ((ptx1_pckt_index + size) < &tx1buff[SIZEOF_TXDATA])
@@ -148,6 +127,7 @@ void Usart1SendUnsigned(unsigned char * send, unsigned char size)
         USART1->CR1 |= USART_CR1_TXEIE;
     }
 }
+
 
 void Usart1SendSingle(unsigned char tosend)
 {
@@ -173,6 +153,9 @@ void USART1Config(void)
 //	USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_UE;	//SIN TX
     USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;	//para pruebas TX
 
+    //Arranco con recepcion de texto
+    pUsartHandler = UsartIntTextHandler;
+    
     //Activo en GPIOB PB7 rx y PB6 tx
     temp = GPIOB->AFR[0];
     temp &= 0x00FFFFFF;
@@ -188,6 +171,53 @@ void USART1Config(void)
     NVIC_EnableIRQ(USART1_IRQn);
     NVIC_SetPriority(USART1_IRQn, 7);
 }
+
+
+//llamada desde la int decide que hacer con la que se recibe
+void UsartIntTextHandler (unsigned char rx_data)
+{
+    if (prx1 < &rx1buff[SIZEOF_RXDATA - 1])
+    {
+        //al /r no le doy bola
+        if (rx_data == '\r')
+        {
+        }
+        else if ((rx_data == '\n') || (rx_data == 26))    //26 es CTRL-Z
+        {
+            *prx1 = '\0';
+            usart1_have_data = 1;
+#ifdef USE_LED_USART1_END_OF_PCKT
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+#endif
+        }
+        else
+        {
+            *prx1 = rx_data;
+            prx1++;
+        }
+    }
+    else
+        prx1 = rx1buff;    //soluciona problema bloqueo con garbage
+}
+
+
+void UsartIntBinaryHandler (unsigned char rx_data)
+{
+    if (prx1 < &rx1buff[SIZEOF_RXDATA - 1])
+    {
+        *prx1 = rx_data;
+        prx1++;
+    }
+    else
+        prx1 = rx1buff;    //soluciona problema bloqueo con garbage
+
+    usart1_have_data = 1;
+    usart1_timeout = USART_TT_FOR_BINARY;
+}
+
 
 
 //--- end of file ---//

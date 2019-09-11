@@ -10,6 +10,10 @@
 #ifndef _UART_H_
 #define _UART_H_
 
+
+// Defines for Configuration ---------------------------------------------------
+#define USART_TT_FOR_BINARY    5
+
 //--- Exported types ---//
 //--- Exported constants ---//
 //--- Exported macro ---//

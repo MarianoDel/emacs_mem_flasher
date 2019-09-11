@@ -318,4 +318,32 @@ short PID_roof (short setpoint, short sample, short local_last_d, short * e_z1, 
 
 #endif    //USE_PID_CONTROLLERS
 
+//Calcula CRC16 de un buffer de largo len
+//si es un multi-buffer agregar crc anterior, sino 0
+#define CRC16_POLY    0x1021
+unsigned short Compute_CRC16_Simple(unsigned char * data_8, unsigned char len, unsigned short last_crc)
+{
+    unsigned short crc = last_crc;
+
+    for (unsigned char j = 0; j < len; j++)
+    {
+        // move byte into MSB of 16bit CRC
+        crc ^= (*(data_8 + j) << 8);
+
+        for (int i = 0; i < 8; i++)
+        {
+            // test for MSB = bit 15
+            if ((crc & 0x8000) != 0)
+            {
+                crc = ((crc << 1) ^ CRC16_POLY);
+            }
+            else
+            {
+                crc <<= 1;
+            }
+        }
+    }
+
+    return crc;
+}
 //--- end of file ---//

@@ -15,6 +15,8 @@
 
 #include "memory.h"
 #include "utils.h"
+#include "tim.h"
+#include "dsp.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -24,10 +26,13 @@
 
 /* Externals ------------------------------------------------------------------*/
 // ------- Externals del Puerto serie  -------
-extern unsigned char usart1_have_data;
-
+extern volatile unsigned char usart1_have_data;
+extern volatile unsigned char usart1_timeout;
+extern volatile unsigned short comms_in_binary_timeout;
+       
 /* Globals --------------------------------------------------------------------*/
 char buffMessages [100];
+unsigned char comms_in_binary = 0;
 
 //strings de comienzo o lineas intermedias
 
@@ -40,19 +45,42 @@ const char s_get_prot [] = {"read prot"};
 const char s_write_all [] = {"write all"};
 const char s_write_addr [] = {"write addr"};
 
+/* Module Private Functions ---------------------------------------------------*/
+void COMM_ReadAllMem (void);
 
-
+    
 /* Module Functions -----------------------------------------------------------*/
 void UpdateCommunications (void)
 {
+    unsigned char bytes_readed = 0;
+    
     if (SerialProcess() > 2)	//si tiene algun dato significativo
     {
         InterpretarMsg();
     }
+
+    if (comms_in_binary)
+    {
+        if ((usart1_have_data) && (!usart1_timeout))
+        {
+            //leo un buffer terminado en 0, que en binario no sirve, ajusto el tamanio
+            bytes_readed = ReadUsart1Buffer((unsigned char *) buffMessages, sizeof(buffMessages));
+            if (bytes_readed)
+                bytes_readed--;
+
+            usart1_have_data = 0;
+            comms_in_binary_timeout = 3000;
+
+            //TODO: algo hago con esto, llamo para grabar o para leer (leer lo hago por otro lado)
+        }
+    }
+
+    if (!comms_in_binary_timeout)
+        comms_in_binary = 0;
 }
 
 //Procesa consultas desde la raspberry
-//carga el buffer buffMessages y avisa con el flag msg_ready
+//carga el buffer buffMessages
 unsigned char SerialProcess (void)
 {
     unsigned char bytes_readed = 0;
@@ -78,6 +106,8 @@ resp_t InterpretarMsg (void)
     //-- Read Actions
     if (strncmp(pStr, s_read_all, sizeof(s_read_all) - 1) == 0)
     {
+        Usart1Send("go to binary\n");
+        COMM_ReadAllMem();
         resp = resp_ok;
     }
     
@@ -218,4 +248,34 @@ resp_t InterpretarMsg (void)
     return resp;
 }
 
+//revisar SIZEOF_TXDATA en Usart1SendUnsigned()
+#define SIZEOF_MEM_BUFFER    16
+void COMM_ReadAllMem (void)
+{    
+    unsigned int addr = 0;
+    unsigned char data [SIZEOF_MEM_BUFFER] = { 0 };
+
+    unsigned short last_crc = 0;
+    
+    Wait_ms(100);
+
+    do {
+        for (unsigned char i = 0; i < SIZEOF_MEM_BUFFER; i++)
+        {
+            data[i] = MEM_ReadByte(addr + i);
+        }
+
+        Usart1SendUnsigned(data, SIZEOF_MEM_BUFFER);
+        last_crc = Compute_CRC16_Simple (data, SIZEOF_MEM_BUFFER, last_crc);
+        Wait_ms(20);
+        addr += SIZEOF_MEM_BUFFER;
+
+    } while (addr < 0x080000);
+
+    //envio CRC como texto
+    Usart1Send("\r\nCRC: ");
+    sprintf((char *)data, "0x%04x\r\n", last_crc);
+    Usart1Send((char *)data);
+    Wait_ms(10);
+}
 //--- end of file ---//
