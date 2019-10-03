@@ -24,6 +24,7 @@
 /* Module Private Functions ---------------------------------------------------*/
 // void MEM_SetAddress (unsigned int);
 void MEM_LowDelay (void);
+void MEM_FastDelay (void);
 void MEM_SetByte (unsigned int, unsigned char);
 
 /* Module Functions -----------------------------------------------------------*/
@@ -86,6 +87,8 @@ void MEM_SetAddress (unsigned int addr)
 {
     char addr_u8 = 0;
 
+    HC595_DISABLE_PARALLEL_OUTPUTS;
+
     addr_u8 = (addr & 0xFF0000) >> 16;
     SPI_Send_Multiple (addr_u8);
 
@@ -96,10 +99,12 @@ void MEM_SetAddress (unsigned int addr)
     SPI_Send_Multiple (addr_u8);
 
     SPI_Busy_Wait();
+
+    LC_HC595_ON;
+    MEM_FastDelay ();
+    LC_HC595_OFF;
     
-    OE_HC595_ON;
-    MEM_LowDelay();
-    OE_HC595_OFF;
+    HC595_ENABLE_PARALLEL_OUTPUTS;
 }
 
 

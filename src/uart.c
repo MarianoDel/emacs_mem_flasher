@@ -147,7 +147,7 @@ void USART1Config(void)
     ptx1_pckt_index = tx1buff;
     prx1 = rx1buff;
 
-    USART1->BRR = USART_9600;
+    USART1->BRR = USART_115200;
 //	USART1->CR2 |= USART_CR2_STOP_1;	//2 bits stop
 //	USART1->CR1 = USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;
 //	USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_UE;	//SIN TX

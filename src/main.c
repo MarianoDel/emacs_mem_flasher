@@ -56,6 +56,8 @@ int main(void)
     //GPIO Configuration.
     GPIO_Config();
 
+    HV_A9_OFF;
+    HV_OE_OFF;
     //Systick Timer
     if (SysTick_Config(48000))
     {
@@ -75,6 +77,95 @@ int main(void)
         }
     }
 
+#ifdef HARD_TEST_MODE_LED_CYCLE
+    //Hard Test LED
+    while (1)
+    {
+        LED_TOGGLE;
+        Wait_ms(1000);
+    }
+#endif
+
+#ifdef HARD_TEST_MODE_MEMORY_SIGNALS
+    //Hard Test LED
+    while (1)
+    {
+        LED_ON;
+        WE_ON;
+        OE_ON;
+        CE_ON;
+        Wait_ms(1000);
+        LED_OFF;
+        WE_OFF;
+        OE_OFF;
+        CE_OFF;
+        Wait_ms(1000);
+    }
+#endif
+
+#ifdef HARD_TEST_MODE_HIGH_VOLTAGE_LINES
+    //Hard Test LED
+    while (1)
+    {
+        LED_ON;
+        HV_A9_ON;
+        HV_OE_ON;
+        Wait_ms(1000);
+        LED_OFF;
+        HV_A9_OFF;
+        HV_OE_OFF;
+        Wait_ms(1000);
+    }
+#endif
+    
+#ifdef HARD_TEST_MODE_SPI_HC595
+    //Hard Test SPI
+    SPI_Config();
+    
+    // while (1)
+    // {
+    //     if (!timer_standby)
+    //     {
+    //         timer_standby = 1000;
+    //         MEM_SetAddress(0x00040003);
+    //     }
+    // }
+
+    // MEM_ReadByte(0x00040003, 0xFF);
+    // MEM_SetByte(0x00040003, 0xFF);
+    MEM_SetByte(0x00040003, 0x55);    
+    while (1);
+#endif
+    
+#ifdef HARD_TEST_MODE_USART
+    //enciendo usart1
+    USART1Config();
+    char buff_local [128] = { 0 };
+    unsigned char readed = 0;
+
+    Usart1Send("\nKirno Technology -- Usart Test\n");
+    while(1)
+    {
+        Wait_ms(3000);
+        if (usart1_have_data)
+        {
+            readed = ReadUsart1Buffer((unsigned char *) buff_local, 127);
+            *(buff_local + readed) = '\n';    //cambio el '\0' por '\n' antes de enviar
+            *(buff_local + readed + 1) = '\0';    //ajusto el '\0'
+            Usart1Send(buff_local);
+        }
+    }    
+#endif
+    
+    //---------- END OF HARD TEST ----------//
+
+    
+    //---------- PRODUCTION PROGRAM ----------//
+#ifdef PRODUCTION_PROGRAM
+    // Activate SPI and Pointers
+    SPI_Config();
+    
+    // Activate the Usart
     USART1Config();
 
     //--- Welcome Messages ---//
@@ -98,243 +189,12 @@ int main(void)
 
     WelcomeCodeFeatures();
 
-    //Hard Test Communications
-    // while (1)
-    // {
-    //     UpdateCommunications ();
-    // }
-
-    //Hard Test SPI
-    SPI_Config();
-    
     while (1)
     {
         UpdateCommunications ();
-        if (!timer_standby)
-        {
-            timer_standby = 20;
-            MEM_SetAddress(0x800001);
-        }
     }
 
-    //Hard Test LED
-    // while (1)
-    // {
-    //     if (LED)
-    //         LED_OFF;
-    //     else
-    //         LED_ON;
-
-    //     Wait_ms(1000);
-    // }
-
-    //Hard Test EN_AUDIO
-    // while (1)
-    // {
-    //     if (EN_AUDIO)
-    //         EN_AUDIO_OFF;
-    //     else
-    //         EN_AUDIO_ON;
-
-    //     Wait_ms(5000);
-    // }
-
-    //Hard Test Buzzer
-    // while (1)
-    // {
-    //     if (!timer_standby)
-    //     {
-    //         timer_standby = 5000;
-    //         BuzzerCommands(BUZZER_SHORT_CMD, 2);
-    //     }
-        
-    //     UpdateBuzzer();
-    // }
-
-    //Hard Test CTRL FAN
-    // CTRL_FAN1_OFF;
-    // CTRL_FAN2_OFF;
-    // CTRL_FAN3_OFF;
-    // CTRL_FAN4_OFF;
-    // while (1)
-    // {
-    //     switch (i)
-    //     {
-    //     case 0:
-    //         if (!timer_standby)
-    //         {
-    //             timer_standby = 5000;
-    //             i++;
-    //             CTRL_FAN1_ON;
-    //             CTRL_FAN4_OFF;
-    //         }
-    //         break;
-    //     case 1:
-    //         if (!timer_standby)
-    //         {
-    //             timer_standby = 5000;
-    //             i++;
-    //             CTRL_FAN2_ON;
-    //             CTRL_FAN1_OFF;
-    //         }
-    //         break;
-    //     case 2:
-    //         if (!timer_standby)
-    //         {
-    //             timer_standby = 5000;
-    //             i++;
-    //             CTRL_FAN3_ON;
-    //             CTRL_FAN2_OFF;
-    //         }
-    //         break;
-    //     case 3:
-    //         if (!timer_standby)
-    //         {
-    //             timer_standby = 5000;
-    //             i = 0;
-    //             CTRL_FAN4_ON;
-    //             CTRL_FAN3_OFF;
-    //         }
-    //         break;
-
-    //     default:
-    //         i = 0;
-    //         break;
-    //     }
-    // }
-
-
-    //Hard Test Usart Tx & Rx
-    // USART1Config();
-    // char str [SIZEOF_RXDATA];
-    // while (1)
-    // {
-    //     if (!timer_standby)
-    //     {
-    //         timer_standby = 2000;
-    //         Usart1Send("Test Usart1\n");
-    //     }
-
-    //     if (usart1_have_data)
-    //     {            
-    //         usart1_have_data = 0;
-    //         timer_standby = 2000;
-    //         ReadUsart1Buffer((unsigned char *)str, SIZEOF_RXDATA);
-    //         Usart1Send(str);
-    //     }            
-    // }
-
-    //Hard Test Channels Fixed
-    // TIM_3_Init();
-    // TIM_1_Init();
-    // CTRL_CH1(DUTY_20_PERCENT);
-    // CTRL_CH2(DUTY_20_PERCENT);
-    // CTRL_CH3(DUTY_20_PERCENT);
-    // CTRL_CH4(DUTY_20_PERCENT);
-    // CTRL_CH5(DUTY_20_PERCENT);
-    // CTRL_CH6(DUTY_20_PERCENT);
-    // while (1);
-    
-    //Hard Test Channels Dimmering
-    // TIM_3_Init();
-    // TIM_1_Init();
-    // CTRL_CH1(DUTY_NONE);
-    // CTRL_CH2(DUTY_NONE);
-    // CTRL_CH3(DUTY_NONE);
-    // CTRL_CH4(DUTY_NONE);
-    // CTRL_CH5(DUTY_NONE);
-    // CTRL_CH6(DUTY_NONE);
-
-    // while (1)
-    // {
-    //     if (!timer_standby)
-    //     {
-    //         timer_standby = 2;
-    //         if (i < DUTY_ALWAYS)
-    //             i++;
-    //         else
-    //         {
-    //             i = 0;
-    //             timer_standby += 998;
-    //         }
-
-    //         CTRL_CH1(i);
-    //         CTRL_CH2(i);
-    //         CTRL_CH3(i);
-    //         CTRL_CH4(i);
-    //         CTRL_CH5(i);
-    //         CTRL_CH6(i);
-    //     }
-    // }
-
-
-    //Hard Test ADC
-    // USART1Config();
-    // char str [SIZEOF_RXDATA] = {'\0'};
-
-    // TIM_3_Init();
-    // TIM_1_Init();
-    // CTRL_CH1(DUTY_10_PERCENT);
-    // CTRL_CH2(DUTY_NONE);
-    // CTRL_CH3(DUTY_NONE);
-    // CTRL_CH4(DUTY_NONE);
-    // CTRL_CH5(DUTY_NONE);
-    // CTRL_CH6(DUTY_NONE);
-    // // while (1);
-    
-    // //Activo el ADC con DMA
-    // AdcConfig();
-
-    // //-- DMA configuration.
-    // DMAConfig();
-    // DMA1_Channel1->CCR |= DMA_CCR_EN;
-
-    // ADC1->CR |= ADC_CR_ADSTART;
-
-    // i = 0;
-    // while (1)
-    // {
-    //     if (sequence_ready)
-    //     {
-    //         if (LED)
-    //             LED_OFF;
-    //         else
-    //             LED_ON;
-            
-    //         sequence_ready_reset;
-    //         i++;
-    //     }
-
-    //     if (i > 48000)
-    //     {
-    //         i = 0;
-    //         sprintf(str, "Temp: %d, V12: %d, V24: %d\n",
-    //                 LM335_VO,
-    //                 V_Sense_12V,
-    //                 V_Sense_24V);
-
-    //         Usart1Send(str);
-    //     }
-    // }
-
-
-
-
-    //---------- END OF HARD TEST ----------//
-
-    //---------- PRODUCTION PROGRAM ----------//
-
-    
-//---- End of Defines from hard.h -----//
-    
-    // while (1)
-    // {        
-    //     TreatmentManager();
-    //     UpdateCommunications();
-    //     UpdateLed();
-    //     UpdateBuzzer();
-    // }
-
+#endif    //PRODUCTION_PROGRAM
     return 0;
 }
 //--- End of Main ---//

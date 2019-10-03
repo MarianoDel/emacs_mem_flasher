@@ -33,8 +33,8 @@ extern volatile unsigned short comms_in_binary_timeout;
 /* Globals --------------------------------------------------------------------*/
 char buffMessages [100];
 unsigned char comms_in_binary = 0;
+unsigned short last_crc = 0;
 
-//strings de comienzo o lineas intermedias
 
 //--- Manager
 const char s_read_all [] = {"read all"};
@@ -44,6 +44,7 @@ const char s_get_sid [] = {"read sid"};
 const char s_get_prot [] = {"read prot"};
 const char s_write_all [] = {"write all"};
 const char s_write_addr [] = {"write addr"};
+const char s_last_crc [] = {"last crc"};
 
 /* Module Private Functions ---------------------------------------------------*/
 void COMM_ReadAllMem (void);
@@ -56,7 +57,9 @@ void UpdateCommunications (void)
     
     if (SerialProcess() > 2)	//si tiene algun dato significativo
     {
+        LED_ON;
         InterpretarMsg();
+        LED_OFF;
     }
 
     if (comms_in_binary)
@@ -151,6 +154,14 @@ resp_t InterpretarMsg (void)
         
         if ((address + bytes_to_read) <= 0x0080000)
             resp = resp_ok;
+    }
+
+    else if (strncmp(pStr, s_last_crc, sizeof(s_last_crc) - 1) == 0)
+    {
+        //envio CRC como texto
+        Usart1Send("CRC: ");
+        sprintf((char *)b_vect, "0x%04x\n", last_crc);
+        Usart1Send((char *)b_vect);
     }
 
     //-- Silicon Actions
@@ -254,10 +265,9 @@ void COMM_ReadAllMem (void)
 {    
     unsigned int addr = 0;
     unsigned char data [SIZEOF_MEM_BUFFER] = { 0 };
-
-    unsigned short last_crc = 0;
     
-    Wait_ms(100);
+    Wait_ms(300);
+    last_crc = 0;
 
     do {
         for (unsigned char i = 0; i < SIZEOF_MEM_BUFFER; i++)
@@ -267,15 +277,9 @@ void COMM_ReadAllMem (void)
 
         Usart1SendUnsigned(data, SIZEOF_MEM_BUFFER);
         last_crc = Compute_CRC16_Simple (data, SIZEOF_MEM_BUFFER, last_crc);
-        Wait_ms(20);
+        Wait_ms(1);
         addr += SIZEOF_MEM_BUFFER;
 
     } while (addr < 0x080000);
-
-    //envio CRC como texto
-    Usart1Send("\r\nCRC: ");
-    sprintf((char *)data, "0x%04x\r\n", last_crc);
-    Usart1Send((char *)data);
-    Wait_ms(10);
 }
 //--- end of file ---//

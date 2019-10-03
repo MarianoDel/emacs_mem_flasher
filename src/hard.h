@@ -1,11 +1,11 @@
 //--------------------------------------------------
-// #### PROYECTO LIGHT TREATMENT - Custom Board ####
+// #### PROYECTO MEMORY FLASHER - Custom Board ####
 // ##
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
 // ## @TAGS:   Global
 // ##
-// #### HARD.C #####################################
+// #### HARD.H #####################################
 //--------------------------------------------------
 #ifndef _HARD_H_
 #define _HARD_H_
@@ -23,6 +23,14 @@
 #define SOFTWARE_VERSION_1_0
 
 
+//---- Type of Program -----------------------
+// #define HARD_TEST_MODE_LED_CYCLE
+// #define HARD_TEST_MODE_MEMORY_SIGNALS
+// #define HARD_TEST_MODE_HIGH_VOLTAGE_LINES
+// #define HARD_TEST_MODE_SPI_HC595
+// #define HARD_TEST_MODE_USART
+#define PRODUCTION_PROGRAM
+
 //---- Features Configuration ----------------
 #define USE_LED_ON_EACH_CYCLE
 // #define USE_LED_IN_PROT
@@ -31,6 +39,7 @@
 #define USE_FREQ_48KHZ     //clean some errors
 
 //---- End of Features Configuration ----------
+
 
 
 //--- Hardware Welcome Code ------------------//
@@ -76,6 +85,10 @@
 //GPIOA pin7    eight bits bidirectional port
 
 //GPIOB pin0
+#define LED ((GPIOB->ODR & 0x0001) != 0)
+#define LED_ON GPIOB->BSRR = 0x00000001
+#define LED_OFF GPIOB->BSRR = 0x00010000
+
 //GPIOB pin1    TIM3 CH1 - CH4
 
 //GPIOA pin8    
@@ -93,18 +106,23 @@
 #define OE_OFF GPIOA->BSRR = 0x00000400
 #define OE_ON GPIOA->BSRR = 0x04000000
 
-
-//GPIOA pin11    TIM1 CH4
+//GPIOA pin11
+#define HV_OE ((GPIOA->ODR & 0x0800) == 0)
+#define HV_OE_ON GPIOA->BSRR = 0x00000800
+#define HV_OE_OFF GPIOA->BSRR = 0x08000000
 
 //GPIOA pin12
-#define LED ((GPIOA->ODR & 0x1000) != 0)
-#define LED_ON GPIOA->BSRR = 0x00001000
-#define LED_OFF GPIOA->BSRR = 0x10000000
+#define HV_A9 ((GPIOA->ODR & 0x1000) == 0)
+#define HV_A9_ON GPIOA->BSRR = 0x00001000
+#define HV_A9_OFF GPIOA->BSRR = 0x10000000
 
 //GPIOA pin13
 //GPIOA pin14    NC
 
 //GPIOA pin15    
+#define LC_HC595 ((GPIOA->ODR & 0x0010) == 0)
+#define LC_HC595_ON GPIOA->BSRR = 0x00008000
+#define LC_HC595_OFF GPIOA->BSRR = 0x80000000
 
 //GPIOB pin3     SPI CLK
 
@@ -174,6 +192,15 @@ typedef enum
 #define xstr_macro(s) str_macro(s)
 #define str_macro(s) #s
 
+#define LED_TOGGLE do { if (LED) \
+                            LED_OFF; \
+                        else         \
+                            LED_ON;  \
+                      } while (0)
+
+
+#define HC595_ENABLE_PARALLEL_OUTPUTS    OE_HC595_ON
+#define HC595_DISABLE_PARALLEL_OUTPUTS    OE_HC595_OFF
 
 /* Module Functions ------------------------------------------------------------*/
 void ChangeLed (unsigned char);
