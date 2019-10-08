@@ -187,7 +187,11 @@ void GPIO_PortAInput (void)
     temp &= 0xFFFF0000;		//PA7 - PA0 input
     temp |= 0x00000000;
     GPIOA->MODER = temp;
-
+    
+    temp = GPIOA->PUPDR;	//2 bits por pin
+    temp &= 0xFFFF0000;
+    temp |= 0x00005555;
+    GPIOA->PUPDR = temp;    
 }
 
 

@@ -131,14 +131,14 @@ int main(void)
     //     }
     // }
 
-    // MEM_ReadByte(0x00040003, 0xFF);
+    // MEM_ReadByte(0x00040003);
     // MEM_SetByte(0x00040003, 0xFF);
     MEM_SetByte(0x00040003, 0x55);    
     while (1);
 #endif
     
 #ifdef HARD_TEST_MODE_USART
-    //enciendo usart1
+    //Activate the USART
     USART1Config();
     char buff_local [128] = { 0 };
     unsigned char readed = 0;
@@ -155,6 +155,49 @@ int main(void)
             Usart1Send(buff_local);
         }
     }    
+#endif
+
+#ifdef HARD_TEST_MODE_MEMORY_READ
+    //Hard Test SPI
+    SPI_Config();
+
+    //Activate the USART    
+    USART1Config();
+    char buff_local [128] = { 0 };
+    unsigned char readed[16] = { 0 };
+
+    Usart1Send("\nKirno Technology -- Read Memory Test\n");
+    
+    while (1)
+    {
+        if (!timer_standby)
+        {
+            timer_standby = 1000;
+            // Leer varios
+            for (unsigned char i = 0; i < 16; i++)
+            {
+                readed[i] = MEM_ReadByte(i);
+            }
+
+            for (unsigned char i = 0; i < 16; i++)
+            {
+                sprintf(buff_local,"0x%02x ", readed[i]);
+                Usart1Send(buff_local);
+            }
+            Usart1Send("\n");
+
+            // Leer siempre el mismo 0x00
+            // readed = MEM_ReadByte(0x00);
+            // sprintf(buff_local,"0x%02x\n", readed);
+            // Usart1Send(buff_local);
+
+            // Leer siempre el mismo 0x0F
+            // readed = MEM_ReadByte(0x0F);
+            // sprintf(buff_local,"0x%02x\n", readed);
+            // Usart1Send(buff_local);
+            
+        }
+    }
 #endif
     
     //---------- END OF HARD TEST ----------//

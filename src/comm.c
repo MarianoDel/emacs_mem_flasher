@@ -48,7 +48,7 @@ const char s_last_crc [] = {"last crc"};
 
 /* Module Private Functions ---------------------------------------------------*/
 void COMM_ReadAllMem (void);
-
+void COMM_ReadAddress (unsigned int, unsigned int);
     
 /* Module Functions -----------------------------------------------------------*/
 void UpdateCommunications (void)
@@ -153,7 +153,10 @@ resp_t InterpretarMsg (void)
         // Usart1Send(b_vect);
         
         if ((address + bytes_to_read) <= 0x0080000)
+        {
+            COMM_ReadAddress(address, bytes_to_read);
             resp = resp_ok;
+        }
     }
 
     else if (strncmp(pStr, s_last_crc, sizeof(s_last_crc) - 1) == 0)
@@ -282,4 +285,49 @@ void COMM_ReadAllMem (void)
 
     } while (addr < 0x080000);
 }
+
+void COMM_ReadAddress (unsigned int addr, unsigned int bytes)
+{
+    unsigned char data [SIZEOF_MEM_BUFFER] = { 0 };
+    char string_data [100] = { 0 };
+    unsigned int orig_addr = addr;
+    
+    Wait_ms(300);
+    last_crc = 0;
+
+    do {
+        for (unsigned char i = 0; i < SIZEOF_MEM_BUFFER; i++)
+        {
+            data[i] = MEM_ReadByte(addr + i);
+        }
+
+        sprintf(string_data, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",
+                data[0],
+                data[1],
+                data[2],
+                data[3],
+                data[4],
+                data[5],
+                data[6],
+                data[7],
+                data[8],
+                data[9],
+                data[10],
+                data[11],
+                data[12],
+                data[13],
+                data[14],
+                data[15]);
+                
+        Usart1Send(string_data);
+        last_crc = Compute_CRC16_Simple (data, SIZEOF_MEM_BUFFER, last_crc);
+        Wait_ms(1);
+        addr += SIZEOF_MEM_BUFFER;
+
+    } while (addr < (orig_addr + bytes));
+
+    sprintf(string_data, "CRC: 0x%x\n", last_crc);
+    Usart1Send(string_data);
+}
+
 //--- end of file ---//
