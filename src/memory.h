@@ -35,6 +35,7 @@ typedef struct {
 //--- End of Defines for Configuration --------------------------
 
 //--- Exported functions ---//
+void MEM_Reset (void);
 void MEM_SetAddress (unsigned int);
 unsigned char MEM_GetManufacturer (silicon_t *);
 unsigned char MEM_GetSilicon (silicon_t *);

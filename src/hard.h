@@ -29,8 +29,9 @@
 // #define HARD_TEST_MODE_HIGH_VOLTAGE_LINES
 // #define HARD_TEST_MODE_SPI_HC595
 // #define HARD_TEST_MODE_USART
-#define HARD_TEST_MODE_MEMORY_READ
-// #define PRODUCTION_PROGRAM
+// #define HARD_TEST_MODE_MEMORY_READ
+// #define HARD_TEST_MODE_MEMORY_SID_MID
+#define PRODUCTION_PROGRAM
 
 //---- Features Configuration ----------------
 #define USE_LED_ON_EACH_CYCLE

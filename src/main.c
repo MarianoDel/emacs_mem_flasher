@@ -173,11 +173,10 @@ int main(void)
         if (!timer_standby)
         {
             timer_standby = 1000;
+
             // Leer varios
             for (unsigned char i = 0; i < 16; i++)
-            {
                 readed[i] = MEM_ReadByte(i);
-            }
 
             for (unsigned char i = 0; i < 16; i++)
             {
@@ -195,6 +194,48 @@ int main(void)
             // readed = MEM_ReadByte(0x0F);
             // sprintf(buff_local,"0x%02x\n", readed);
             // Usart1Send(buff_local);
+            
+        }
+    }
+#endif
+
+#ifdef HARD_TEST_MODE_MEMORY_SID_MID
+    //Hard Test SPI
+    SPI_Config();
+
+    //Activate the USART    
+    USART1Config();
+    char buff_local [128] = { 0 };
+    unsigned char readed = 0;
+
+    Usart1Send("\nKirno Technology -- SID & MID Read Memory Test\n");
+    MEM_Reset();
+
+    
+    while (1)
+    {
+        if (!timer_standby)
+        {
+            timer_standby = 1000;
+
+            // Leer SID
+            MEM_SetByte(0x555, 0xAA);
+            MEM_SetByte(0x2AA, 0x55);
+            MEM_SetByte(0x555, 0x90);
+
+            readed = MEM_ReadByte(0x01);
+            sprintf(buff_local,"SID: 0x%02x\n", readed);
+            Usart1Send(buff_local);
+
+            // Leer MID
+            MEM_SetByte(0x555, 0xAA);
+            MEM_SetByte(0x2AA, 0x55);
+            MEM_SetByte(0x555, 0x90);
+
+            readed = MEM_ReadByte(0x00);
+            sprintf(buff_local,"MID: 0x%02x\n", readed);
+            Usart1Send(buff_local);
+            
             
         }
     }
@@ -232,6 +273,7 @@ int main(void)
 
     WelcomeCodeFeatures();
 
+    MEM_Reset();
     while (1)
     {
         UpdateCommunications ();

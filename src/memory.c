@@ -174,12 +174,14 @@ void MEM_WriteByte (unsigned int addr, unsigned char data)
     MEM_FastDelay();
     GPIO_PortAInput();
 
-    data &= 0x80;
+    //chequeo Q7 y Q6
+    data &= 0xC0;
     do {
-        check = GPIO_PortARead();
-        check &= 0x80;
+        check = MEM_ReadByte(addr);
+        check &= 0xC0;
     }
     while (check != data);
+
 }
 
 //--- end of file ---//

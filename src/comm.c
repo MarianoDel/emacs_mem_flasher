@@ -37,6 +37,7 @@ unsigned short last_crc = 0;
 
 
 //--- Manager
+const char s_mem_reset [] = {"mem reset"};
 const char s_read_all [] = {"read all"};
 const char s_read_address [] = {"read addr"};
 const char s_get_mid [] = {"read mid"};
@@ -113,7 +114,13 @@ resp_t InterpretarMsg (void)
         COMM_ReadAllMem();
         resp = resp_ok;
     }
-    
+
+    else if (strncmp(pStr, s_mem_reset, sizeof(s_mem_reset) - 1) == 0)
+    {
+        MEM_Reset();
+        resp = resp_ok;
+    }
+
     else if (strncmp(pStr, s_read_address, sizeof(s_read_address) - 1) == 0)
     {
         pStr += sizeof(s_read_address);		//normalizo al payload, hay un espacio
@@ -228,7 +235,7 @@ resp_t InterpretarMsg (void)
         
         memset(b_vect, 0, sizeof(b_vect));
 
-        //aca llega la cantidad de bytes a escribir
+        //aca llega el valor a escribir
         for (unsigned char i = 0; i < sizeof(b_vect); i++)
         {
             if (*(pStr + i) != ' ')
@@ -240,13 +247,18 @@ resp_t InterpretarMsg (void)
             }
         }
         bytes_to_read = atoi(b_vect);
-        // sprintf(b_vect, "b: %x\n", bytes_to_read);
+        // sprintf(b_vect, "a: %x ", bytes_to_read);
         // Usart1Send(b_vect);
-        
-        if ((address + bytes_to_read) <= 0x0080000)
-            resp = resp_ok;
-        
-        resp = resp_ok;
+
+        if ((bytes_to_read >= 0) &&
+            (bytes_to_read <= 255))
+        {
+            if ((address) <= 0x0080000)
+            {
+                MEM_WriteByte(address, (unsigned char) bytes_to_read);
+                resp = resp_ok;
+            }
+        }
     }
         
     //-- Ninguno de los anteriores
@@ -301,7 +313,8 @@ void COMM_ReadAddress (unsigned int addr, unsigned int bytes)
             data[i] = MEM_ReadByte(addr + i);
         }
 
-        sprintf(string_data, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",
+        sprintf(string_data, "addr: %d data: %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",
+                addr,
                 data[0],
                 data[1],
                 data[2],
@@ -321,8 +334,8 @@ void COMM_ReadAddress (unsigned int addr, unsigned int bytes)
                 
         Usart1Send(string_data);
         last_crc = Compute_CRC16_Simple (data, SIZEOF_MEM_BUFFER, last_crc);
-        Wait_ms(1);
         addr += SIZEOF_MEM_BUFFER;
+        Wait_ms(10);
 
     } while (addr < (orig_addr + bytes));
 
