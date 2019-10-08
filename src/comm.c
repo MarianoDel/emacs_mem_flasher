@@ -58,9 +58,13 @@ void UpdateCommunications (void)
     
     if (SerialProcess() > 2)	//si tiene algun dato significativo
     {
+#ifdef USE_LED_IN_USART_ANSWERS
         LED_ON;
+#endif
         InterpretarMsg();
+#ifdef USE_LED_IN_USART_ANSWERS        
         LED_OFF;
+#endif
     }
 
     if (comms_in_binary)

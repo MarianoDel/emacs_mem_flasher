@@ -37,7 +37,6 @@ unsigned char MEM_GetManufacturer (silicon_t * m_info)
     MEM_SetByte(0x555, 0x90);
 
     m_info->manufacturer = MEM_ReadByte(0x00);
-    // m_info->manufacturer = 194;
     return resp_ok;
 }
 
@@ -49,7 +48,6 @@ unsigned char MEM_GetSilicon (silicon_t * m_info)
     MEM_SetByte(0x555, 0x90);
 
     m_info->silicon = MEM_ReadByte(0x01);
-    // m_info->silicon = 79;
     return resp_ok;
 }
 
@@ -170,18 +168,21 @@ void MEM_WriteByte (unsigned int addr, unsigned char data)
     MEM_SetByte(0x555, 0xA0);
 
     MEM_SetByte(addr, data);
-
-    MEM_FastDelay();
-    GPIO_PortAInput();
+    LED_ON;
 
     //chequeo Q7 y Q6
-    data &= 0xC0;
-    do {
-        check = MEM_ReadByte(addr);
-        check &= 0xC0;
-    }
-    while (check != data);
-
+    // data &= 0xC0;
+    // do {
+    //     check = MEM_ReadByte(addr);
+    //     check &= 0xC0;
+    // }
+    // while (check != data);
+    check = MEM_ReadByte(addr);
+    LED_OFF;
+    check = MEM_ReadByte(addr);
+    LED_ON;
+    MEM_FastDelay();
+    LED_OFF;
 }
 
 //--- end of file ---//

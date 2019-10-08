@@ -33,8 +33,10 @@ void SPI_Config(void)
     SPI1->CR1 = 0;
 
 #if defined SPI_MASTER
-    //SPI speed; clk / 256; master
-    SPI1->CR1 |= SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_BR_2;
+    // //SPI speed; clk / 256; master
+    // SPI1->CR1 |= SPI_CR1_BR_0 | SPI_CR1_BR_1 | SPI_CR1_BR_2;
+    //SPI speed; clk / 8; master
+    SPI1->CR1 |=  SPI_CR1_BR_1;
 #elif defined SPI_SLAVE
     //SPI speed; clk / 256; master
     //TODO: chequear esta configuracion, la hice de memoria
