@@ -240,6 +240,110 @@ int main(void)
         }
     }
 #endif
+
+#ifdef HARD_TEST_MODE_MEMORY_WRITE_BYTE
+    //Hard Test SPI
+    SPI_Config();
+
+    //Activate the USART    
+    USART1Config();
+    char buff_local [128] = { 0 };
+    unsigned char readed = 0;
+    unsigned char addr = 0;
+
+    Usart1Send("\nKirno Technology -- Write Memory Test\n");
+
+    while (1)
+    {
+        if (!timer_standby)
+        {
+            timer_standby = 2000;
+
+            if (addr < 100)
+            {
+                // Reset Memory
+                MEM_Reset();
+
+                // Read address                
+                readed = MEM_ReadByte(addr);
+                sprintf(buff_local,"Address: 0x%02x Data: 0x%02x\n", addr, readed);
+                Usart1Send(buff_local);
+                if (readed == 0x01)
+                    addr += 1;
+            
+                Wait_ms(10);
+
+                sprintf(buff_local,"Write 0x01 to addr: 0x%02x\n", addr);
+                Usart1Send(buff_local);
+                MEM_WriteByte(addr, 0x01);
+                Wait_ms(10);
+            }
+        }
+    }
+#endif
+
+#ifdef HARD_TEST_MODE_MEMORY_ERASE
+    //Hard Test SPI
+    SPI_Config();
+
+    //Activate the USART    
+    USART1Config();
+    char buff_local [128] = { 0 };
+    unsigned char readed = 0;
+    unsigned char addr = 0;
+
+    Usart1Send("\nKirno Technology -- Erase Memory Test\n");
+
+    while (1)
+    {
+        if (!timer_standby)
+        {
+            timer_standby = 30000;
+
+            // Reset Memory
+            MEM_Reset();
+
+            // Erase Sector
+            sprintf(buff_local,"Erasing Sector Address: 0x%x\n", SA0_ADDR);
+            Usart1Send(buff_local);
+
+            Usart1Send("\nErasing Sector 0\n");
+            MEM_SectorErase(SA0_ADDR);
+            Wait_ms(1000);
+
+            // Read address
+            Usart1Send("Verifing Sector 0\n");
+            unsigned short dot_counter = 0;
+            addr = 0;
+            
+            for (unsigned int i = 0; i < SA_LENGHT; i++)
+            {
+                readed = MEM_ReadByte(addr);
+                addr++;
+
+                if (dot_counter < 512)
+                    dot_counter++;
+                else
+                {
+                    dot_counter = 0;
+                    Usart1Send(".");
+                }
+                
+                if (readed != 0xFF)
+                    i = SA_LENGHT;
+                
+            }
+
+            if (readed == 0xFF)
+                Usart1Send("OK\n");
+            else
+            {
+                sprintf(buff_local,"Error address: 0x%x Data: 0x%02x\n", (addr - 1), readed);
+                Usart1Send(buff_local);
+            }
+        }
+    }
+#endif
     
     //---------- END OF HARD TEST ----------//
 

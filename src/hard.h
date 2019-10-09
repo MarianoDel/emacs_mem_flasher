@@ -31,7 +31,9 @@
 // #define HARD_TEST_MODE_USART
 // #define HARD_TEST_MODE_MEMORY_READ
 // #define HARD_TEST_MODE_MEMORY_SID_MID
-#define PRODUCTION_PROGRAM
+// #define HARD_TEST_MODE_MEMORY_WRITE_BYTE
+#define HARD_TEST_MODE_MEMORY_ERASE
+// #define PRODUCTION_PROGRAM
 
 //---- Features Configuration ----------------
 // #define USE_LED_ON_EACH_CYCLE

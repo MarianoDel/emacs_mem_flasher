@@ -47,7 +47,9 @@ unsigned char MEM_GetSilicon (silicon_t * m_info)
     MEM_SetByte(0x2AA, 0x55);
     MEM_SetByte(0x555, 0x90);
 
+    LED_ON;
     m_info->silicon = MEM_ReadByte(0x01);
+    LED_OFF;
     return resp_ok;
 }
 
@@ -161,28 +163,34 @@ unsigned char MEM_ReadByte (unsigned int addr)
 
 void MEM_WriteByte (unsigned int addr, unsigned char data)
 {
-    unsigned char check = 0;
-    
     MEM_SetByte(0x555, 0xAA);
     MEM_SetByte(0x2AA, 0x55);
     MEM_SetByte(0x555, 0xA0);
 
     MEM_SetByte(addr, data);
-    LED_ON;
+}
 
-    //chequeo Q7 y Q6
-    // data &= 0xC0;
-    // do {
-    //     check = MEM_ReadByte(addr);
-    //     check &= 0xC0;
-    // }
-    // while (check != data);
-    check = MEM_ReadByte(addr);
-    LED_OFF;
-    check = MEM_ReadByte(addr);
-    LED_ON;
-    MEM_FastDelay();
-    LED_OFF;
+
+void MEM_SectorErase (unsigned int addr)
+{
+    MEM_SetByte(0x555, 0xAA);
+    MEM_SetByte(0x2AA, 0x55);
+    MEM_SetByte(0x555, 0x80);
+    MEM_SetByte(0x555, 0xAA);
+    MEM_SetByte(0x2AA, 0x55);
+
+    MEM_SetByte(addr, 0x30);
+}
+
+
+void MEM_ChipErase (void)
+{
+    MEM_SetByte(0x555, 0xAA);
+    MEM_SetByte(0x2AA, 0x55);
+    MEM_SetByte(0x555, 0x80);
+    MEM_SetByte(0x555, 0xAA);
+    MEM_SetByte(0x2AA, 0x55);
+    MEM_SetByte(0x555, 0x10);
 }
 
 //--- end of file ---//

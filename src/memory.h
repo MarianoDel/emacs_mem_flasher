@@ -31,6 +31,17 @@ typedef struct {
 #define SA1_PROTECTED    0x02
 #define SA0_PROTECTED    0x01
 
+#define SA7_ADDR    0x70000
+#define SA6_ADDR    0x60000
+#define SA5_ADDR    0x50000
+#define SA4_ADDR    0x40000
+#define SA3_ADDR    0x30000
+#define SA2_ADDR    0x20000
+#define SA1_ADDR    0x10000
+#define SA0_ADDR    0x00000
+
+#define SA_LENGHT    SECTORS_LENGHT
+
 //--- Defines for Configuration ---------------------------------
 //--- End of Defines for Configuration --------------------------
 
@@ -43,6 +54,8 @@ unsigned char MEM_GetProtectedSectors (silicon_t *);
 
 unsigned char MEM_ReadByte (unsigned int);
 void MEM_WriteByte (unsigned int, unsigned char);
+void MEM_SectorErase (unsigned int);
+void MEM_ChipErase (void);
 
 #endif    /* _MEMORY_H_ */
 
