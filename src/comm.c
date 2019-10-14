@@ -40,18 +40,30 @@ unsigned short last_crc = 0;
 const char s_mem_reset [] = {"mem reset"};
 const char s_read_all [] = {"read all"};
 const char s_read_address [] = {"read addr"};
+const char s_read_crc [] = {"read crc"};
 const char s_get_mid [] = {"read mid"};
 const char s_get_sid [] = {"read sid"};
 const char s_get_prot [] = {"read prot"};
+const char s_blank_check [] = {"blank check"};
 const char s_write_all [] = {"write all"};
 const char s_write_addr [] = {"write addr"};
+const char s_erase_all [] = {"erase all"};
 const char s_last_crc [] = {"last crc"};
+
+/* Module Private Types -------------------------------------------------------*/
+typedef struct {
+    unsigned int address;
+    unsigned char data;
+} mem_data_t;
 
 /* Module Private Functions ---------------------------------------------------*/
 resp_t COMM_ReadAllMem (void);
 resp_t COMM_WriteAllMem (void);
 void COMM_ReadAddress (unsigned int, unsigned int);
-    
+unsigned short COMM_GetCRC (unsigned short);
+resp_t COMM_BlankCheck (mem_data_t *);
+resp_t COMM_EraseAllMem (void);
+
 /* Module Functions -----------------------------------------------------------*/
 void UpdateCommunications (void)
 {
@@ -122,12 +134,48 @@ resp_t InterpretarMsg (void)
 
     }
 
-    else if (strncmp(pStr, s_mem_reset, sizeof(s_mem_reset) - 1) == 0)
+    else if (strncmp(pStr, s_read_crc, sizeof(s_read_crc) - 1) == 0)
     {
         MEM_Reset();
+        Wait_ms(1);
+        
+        last_crc = 0;
+        last_crc = COMM_GetCRC(last_crc);
+        Usart1Send("CRC: ");
+        sprintf((char *)b_vect, "0x%04x\n", last_crc);
+        Usart1Send((char *)b_vect);
         resp = resp_ok;
     }
 
+    else if (strncmp(pStr, s_blank_check, sizeof(s_blank_check) - 1) == 0)
+    {
+        mem_data_t mem_data;
+        
+        MEM_Reset();
+        Wait_ms(1);
+        
+        resp = COMM_BlankCheck(&mem_data);
+        
+        if (resp == resp_ok)
+            Usart1Send("Blank Check ok\n");
+        else
+        {
+            Usart1Send("Blank Check Fail! in address: ");
+            // sprintf(b_vect, "%d data: %02x\n", mem_data.address, mem_data.data);
+            sprintf(b_vect, "%d data: %d\n", mem_data.address, mem_data.data);
+            Usart1Send(b_vect);
+        }
+        resp = resp_ok;
+    }
+
+    else if (strncmp(pStr, s_mem_reset, sizeof(s_mem_reset) - 1) == 0)
+    {
+        MEM_Reset();
+        Wait_ms(1);
+        
+        resp = resp_ok;
+    }
+    
     else if (strncmp(pStr, s_read_address, sizeof(s_read_address) - 1) == 0)
     {
         pStr += sizeof(s_read_address);		//normalizo al payload, hay un espacio
@@ -270,6 +318,18 @@ resp_t InterpretarMsg (void)
             }
         }
     }
+
+    else if (strncmp(pStr, s_erase_all, sizeof(s_erase_all) - 1) == 0)
+    {
+        MEM_Reset();
+        Wait_ms(1);
+
+        resp = COMM_EraseAllMem();
+        if (resp == resp_ok)
+            Usart1Send("Erased\n");
+
+    }
+
         
     //-- Ninguno de los anteriores
     else
@@ -425,6 +485,68 @@ unsigned short COMM_SendBinary (unsigned int addr, unsigned short qtty, unsigned
     }
 
     return crc;
+}
+
+
+unsigned short COMM_GetCRC (unsigned short crc)
+{
+    unsigned char data [SIZEOF_MEM_BUFFER] = { 0 };
+    unsigned int addr = 0;
+    
+    while (addr < (SECTORS_LENGHT * SECTORS_QTTY))
+    {
+        for (unsigned char i = 0; i < SIZEOF_MEM_BUFFER; i++)
+            data[i] = MEM_ReadByte(addr + i);
+
+        crc = Compute_CRC16_Simple (data, SIZEOF_MEM_BUFFER, crc);
+        addr += SIZEOF_MEM_BUFFER;
+    }
+
+    return crc;
+}
+
+
+resp_t COMM_BlankCheck (mem_data_t * mem)
+{
+    resp_t resp = resp_ok;
+    unsigned char data [SIZEOF_MEM_BUFFER] = { 0 };
+    unsigned int addr = 0;
+    
+    while (addr < (SECTORS_LENGHT * SECTORS_QTTY))
+    {
+        for (unsigned char i = 0; i < SIZEOF_MEM_BUFFER; i++)
+        {
+            data[i] = MEM_ReadByte(addr + i);
+            if (data[i] != 0xFF)
+            {
+                mem->address = addr + i;
+                mem->data = data[i];
+
+                i = SIZEOF_MEM_BUFFER;
+                addr = SECTORS_LENGHT * SECTORS_QTTY;
+                resp = resp_error;
+            }
+        }
+        addr += SIZEOF_MEM_BUFFER;
+    }
+
+    return resp;
+}
+
+
+resp_t COMM_EraseAllMem (void)
+{
+    resp_t resp = resp_ok;
+
+    for (unsigned int i = SA0_ADDR;
+         i < (SA7_ADDR + SECTORS_LENGHT);
+         i += SECTORS_LENGHT)
+    {
+        MEM_SectorErase(i);
+        Wait_ms(10);
+    }
+    
+    return resp;
 }
 
 

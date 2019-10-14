@@ -12,8 +12,6 @@
 
 
 //--- Defines For Configuration ---//
-#define CHF_ANSWER_FOR_ALL_CHANNELS
-
 //--- Exported types ---//
 //--- Exported constants ---//
 typedef enum {

@@ -39,7 +39,7 @@
 // #define USE_LED_ON_EACH_CYCLE
 // #define USE_LED_IN_PROT
 // #define USE_LED_USART1_END_OF_PCKT
-// #define USE_LED_IN_USART_ANSWERS
+#define USE_LED_IN_USART_ANSWERS
 
 #define USE_FREQ_48KHZ     //clean some errors
 
