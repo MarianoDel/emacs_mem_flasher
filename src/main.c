@@ -29,6 +29,7 @@
 //-- Timers externals --------------------------------
 volatile unsigned char timer_1seg = 0;
 volatile unsigned short timer_led = 0;
+volatile unsigned short timer_memory = 0;
 
 
 //-- Usart externals ---------------------------------
@@ -36,7 +37,7 @@ volatile unsigned char usart1_have_data;
 volatile unsigned char usart1_timeout;
 
 //-- Comms externals ---------------------------------
-volatile unsigned short comms_in_binary_timeout = 0;
+volatile unsigned short comms_send_timeout = 0;
 
 // Global Variables ----------------------------------
 //-- Timers globals ----------------------------------
@@ -309,7 +310,6 @@ int main(void)
 
             Usart1Send("\nErasing Sector 0\n");
             MEM_SectorErase(SA0_ADDR);
-            Wait_ms(1000);
 
             // Read address
             Usart1Send("Verifing Sector 0\n");
@@ -335,7 +335,7 @@ int main(void)
             }
 
             if (readed == 0xFF)
-                Usart1Send("OK\n");
+                Usart1Send("\nOK\n");
             else
             {
                 sprintf(buff_local,"Error address: 0x%x Data: 0x%02x\n", (addr - 1), readed);
@@ -399,11 +399,14 @@ void TimingDelay_Decrement(void)
     if (timer_led)
         timer_led--;
 
+    if (timer_memory)
+        timer_memory--;
+    
     if (usart1_timeout)
         usart1_timeout--;
 
-    if (comms_in_binary_timeout)
-        comms_in_binary_timeout--;
+    if (comms_send_timeout)
+        comms_send_timeout--;
     
 }
 

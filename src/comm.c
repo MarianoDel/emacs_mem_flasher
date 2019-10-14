@@ -28,7 +28,7 @@
 // ------- Externals del Puerto serie  -------
 extern volatile unsigned char usart1_have_data;
 extern volatile unsigned char usart1_timeout;
-extern volatile unsigned short comms_in_binary_timeout;
+extern volatile unsigned short comms_send_timeout;
        
 /* Globals --------------------------------------------------------------------*/
 char buffMessages [100];
@@ -48,13 +48,14 @@ const char s_write_addr [] = {"write addr"};
 const char s_last_crc [] = {"last crc"};
 
 /* Module Private Functions ---------------------------------------------------*/
-void COMM_ReadAllMem (void);
+resp_t COMM_ReadAllMem (void);
+resp_t COMM_WriteAllMem (void);
 void COMM_ReadAddress (unsigned int, unsigned int);
     
 /* Module Functions -----------------------------------------------------------*/
 void UpdateCommunications (void)
 {
-    unsigned char bytes_readed = 0;
+    // unsigned char bytes_readed = 0;
     
     if (SerialProcess() > 2)	//si tiene algun dato significativo
     {
@@ -67,24 +68,24 @@ void UpdateCommunications (void)
 #endif
     }
 
-    if (comms_in_binary)
-    {
-        if ((usart1_have_data) && (!usart1_timeout))
-        {
-            //leo un buffer terminado en 0, que en binario no sirve, ajusto el tamanio
-            bytes_readed = ReadUsart1Buffer((unsigned char *) buffMessages, sizeof(buffMessages));
-            if (bytes_readed)
-                bytes_readed--;
+    // if (comms_in_binary)
+    // {
+    //     if ((usart1_have_data) && (!usart1_timeout))
+    //     {
+    //         //leo un buffer terminado en 0, que en binario no sirve, ajusto el tamanio
+    //         bytes_readed = ReadUsart1Buffer((unsigned char *) buffMessages, sizeof(buffMessages));
+    //         if (bytes_readed)
+    //             bytes_readed--;
 
-            usart1_have_data = 0;
-            comms_in_binary_timeout = 3000;
+    //         usart1_have_data = 0;
+    //         comms_in_binary_timeout = 3000;
 
-            //TODO: algo hago con esto, llamo para grabar o para leer (leer lo hago por otro lado)
-        }
-    }
+    //         //TODO: algo hago con esto, llamo para grabar o para leer (leer lo hago por otro lado)
+    //     }
+    // }
 
-    if (!comms_in_binary_timeout)
-        comms_in_binary = 0;
+    // if (!comms_in_binary_timeout)
+    //     comms_in_binary = 0;
 }
 
 //Procesa consultas desde la raspberry
@@ -115,8 +116,10 @@ resp_t InterpretarMsg (void)
     if (strncmp(pStr, s_read_all, sizeof(s_read_all) - 1) == 0)
     {
         Usart1Send("go to binary\n");
-        COMM_ReadAllMem();
-        resp = resp_ok;
+        resp = COMM_ReadAllMem();
+        if (resp == resp_timeout)
+            Usart1Send("Timeout\n");
+
     }
 
     else if (strncmp(pStr, s_mem_reset, sizeof(s_mem_reset) - 1) == 0)
@@ -212,8 +215,11 @@ resp_t InterpretarMsg (void)
     //-- Write Actions
     else if (strncmp(pStr, s_write_all, sizeof(s_write_all) - 1) == 0)
     {
-        Usart1Send("Write all\n");
-        resp = resp_ok;
+        Usart1Send("go to binary\n");
+        resp = COMM_WriteAllMem();
+        if (resp == resp_timeout)
+            Usart1Send("Timeout\n");
+        
     }
 
     else if (strncmp(pStr, s_write_addr, sizeof(s_write_addr) - 1) == 0)
@@ -278,29 +284,248 @@ resp_t InterpretarMsg (void)
     return resp;
 }
 
-//revisar SIZEOF_TXDATA en Usart1SendUnsigned()
-#define SIZEOF_MEM_BUFFER    16
-void COMM_ReadAllMem (void)
-{    
-    unsigned int addr = 0;
-    unsigned char data [SIZEOF_MEM_BUFFER] = { 0 };
-    
-    Wait_ms(300);
-    last_crc = 0;
 
-    do {
-        for (unsigned char i = 0; i < SIZEOF_MEM_BUFFER; i++)
+
+ //////////////////////////////////////////////////////////
+ // Funciones que usan interaccion entre Binario y Texto //
+ //////////////////////////////////////////////////////////
+unsigned short COMM_SendBinary (unsigned int, unsigned short, unsigned short);
+void COMM_UpdateCommsInBinaryTxRx (unsigned char *);
+
+typedef enum {
+    SEND_STATE_INIT,
+    SEND_STATE_WAITING_NEXT,
+    SEND_STATE_SENDING,
+    SEND_STATE_CALC_NEXT
+
+} send_state_t;
+
+#define NEXT 0x01
+#define STOP 0x02
+#define ENDED 0x04
+#define SIZEOF_MEM_BUFFER    16
+#define CHUNK_SIZE    1024
+#define TT_BINARY    10000
+resp_t COMM_ReadAllMem (void)
+{
+    resp_t resp = resp_continue;
+    unsigned int addr = 0;
+    unsigned char comms_send_answer = 0;
+    unsigned short to_send = 0;
+    char next_s [20] = { 0 };
+    send_state_t comms_send_state = SEND_STATE_INIT;
+
+    //wait for send_next or timeout
+    while (resp == resp_continue)
+    {
+        switch (comms_send_state)
         {
-            data[i] = MEM_ReadByte(addr + i);
+        case SEND_STATE_INIT:
+            last_crc = 0;
+            addr = 0;
+            comms_send_state = SEND_STATE_CALC_NEXT;
+            break;
+
+        case SEND_STATE_WAITING_NEXT:
+            if (comms_send_answer & NEXT)
+                comms_send_state = SEND_STATE_SENDING;
+
+            if (!comms_send_timeout)
+                resp = resp_timeout;
+
+            break;
+
+        case SEND_STATE_SENDING:
+            last_crc = COMM_SendBinary (addr, CHUNK_SIZE, last_crc);
+            addr += CHUNK_SIZE;
+            comms_send_state = SEND_STATE_CALC_NEXT;
+            break;
+
+        case SEND_STATE_CALC_NEXT:
+            if ((addr + CHUNK_SIZE) <= (SECTORS_LENGHT * SECTORS_QTTY))
+                to_send = CHUNK_SIZE;
+            else
+                to_send = 0;    //TODO: revisar esto para memorias de otros valores
+
+            if (to_send)
+            {
+                sprintf(next_s, "next %d\n", to_send);
+                Usart1Send(next_s);
+                comms_send_timeout = TT_BINARY;
+                comms_send_state = SEND_STATE_WAITING_NEXT;
+            }
+            else
+            {
+                sprintf(next_s, "CRC: 0x%04x\n", last_crc);
+                Usart1Send(next_s);
+                // Usart1Send("end\n");
+                resp = resp_ok;
+            }
+            break;
+
+        default:
+            comms_send_state = SEND_STATE_INIT;
+            break;
         }
 
+        comms_send_answer = 0;
+        COMM_UpdateCommsInBinaryTxRx(&comms_send_answer);
+
+        if (comms_send_answer & STOP)
+            resp = resp_error;
+
+    }    //end while resp == resp_continue
+
+    return resp;
+}
+
+
+void COMM_UpdateCommsInBinaryTxRx (unsigned char * answer)
+{
+    if (SerialProcess() > 2)	//si tiene algun dato significativo
+    {
+        //espero solo un next ended o un stop
+        char * pStr = buffMessages;        
+        if (strncmp(pStr, "next", sizeof("next") - 1) == 0)
+        {
+            *answer |= NEXT;
+        }
+
+        else if (strncmp(pStr, "stop", sizeof("stop") - 1) == 0)
+        {
+            *answer |= STOP;
+        }
+
+        else if (strncmp(pStr, "ended", sizeof("ended") - 1) == 0)
+        {
+            *answer |= ENDED;
+        }
+        
+    }
+}
+
+
+unsigned short COMM_SendBinary (unsigned int addr, unsigned short qtty, unsigned short crc)
+{
+    unsigned char data [SIZEOF_MEM_BUFFER] = { 0 };
+    unsigned int orig_addr = 0;
+
+    orig_addr = addr;
+
+    while ((orig_addr + qtty) > addr)
+    {
+        for (unsigned char i = 0; i < SIZEOF_MEM_BUFFER; i++)
+            data[i] = MEM_ReadByte(addr + i);
+
         Usart1SendUnsigned(data, SIZEOF_MEM_BUFFER);
-        last_crc = Compute_CRC16_Simple (data, SIZEOF_MEM_BUFFER, last_crc);
-        Wait_ms(1);
+        crc = Compute_CRC16_Simple (data, SIZEOF_MEM_BUFFER, crc);
         addr += SIZEOF_MEM_BUFFER;
 
-    } while (addr < 0x080000);
+        Wait_ms(2);    //1.38ms to send
+    }
+
+    return crc;
 }
+
+
+typedef enum {
+    RECEIV_STATE_INIT,
+    RECEIV_STATE_WAITING_NEXT,
+    RECEIV_STATE_GETTING,
+    RECEIV_STATE_SAVING
+
+} receiv_state_t;
+
+#define comms_receiv_timeout comms_send_timeout
+resp_t COMM_WriteAllMem (void)
+{
+    resp_t resp = resp_continue;
+    unsigned int addr = 0;
+    unsigned int getted = 0;
+    unsigned char comms_receiv_answer = 0;
+    receiv_state_t comms_receiv_state = RECEIV_STATE_INIT;
+    char s_ended [40] = { 0 };
+    unsigned char data [SIZEOF_MEM_BUFFER] = { 0 };
+
+    //wait for receiv_next or timeout
+    while (resp == resp_continue)
+    {
+        switch (comms_receiv_state)
+        {
+        case RECEIV_STATE_INIT:
+            addr = 0;
+            last_crc = 0;
+            comms_receiv_timeout = TT_BINARY;
+            comms_receiv_state = RECEIV_STATE_WAITING_NEXT;
+            break;
+
+        case RECEIV_STATE_WAITING_NEXT:
+            
+            comms_receiv_answer = 0;
+            COMM_UpdateCommsInBinaryTxRx(&comms_receiv_answer);
+
+            if (comms_receiv_answer & NEXT)
+            {
+                Usart1Send("n\n");
+                Usart1ToBinary(SIZEOF_MEM_BUFFER);
+                comms_receiv_timeout = TT_BINARY;
+                comms_receiv_state = RECEIV_STATE_GETTING;
+            }
+
+            if (comms_receiv_answer & ENDED)
+                resp = resp_ok;
+
+            if (!comms_receiv_timeout)
+                resp = resp_timeout;
+
+            break;
+
+        case RECEIV_STATE_GETTING:
+            if (usart1_have_data)
+            {
+                //tengo los 16 bytes
+                usart1_have_data = 0;
+                unsigned char bytes_readed = 0;
+                bytes_readed = ReadUsart1Buffer((unsigned char *) data, SIZEOF_MEM_BUFFER);
+                if (bytes_readed != SIZEOF_MEM_BUFFER)
+                    resp = resp_error;
+                else
+                {
+                    getted += bytes_readed;
+                    last_crc = Compute_CRC16_Simple (data, SIZEOF_MEM_BUFFER, last_crc);
+                    comms_receiv_state = RECEIV_STATE_SAVING;
+                }
+            }
+
+            if (!comms_receiv_timeout)
+                resp = resp_timeout;
+
+            break;
+
+        case RECEIV_STATE_SAVING:
+            for (unsigned char i = 0; i < SIZEOF_MEM_BUFFER; i++)
+                MEM_WriteByte(addr + i, data[i]);
+            
+            addr += SIZEOF_MEM_BUFFER;
+            Usart1ToText();
+            Usart1Send(".\n");
+            comms_receiv_timeout = TT_BINARY;
+            comms_receiv_state = RECEIV_STATE_WAITING_NEXT;
+            break;
+            
+        default:
+            comms_receiv_state = RECEIV_STATE_INIT;
+            break;
+        }
+
+    }    //end while resp == resp_continue
+
+    Usart1ToText();
+    sprintf(s_ended, "Rx: %d Svd: %d CRC: 0x%04x\n", getted, addr, last_crc);
+    Usart1Send(s_ended);
+    return resp;
+}
+
 
 void COMM_ReadAddress (unsigned int addr, unsigned int bytes)
 {

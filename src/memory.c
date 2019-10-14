@@ -16,7 +16,7 @@
 #include "gpio.h"
 
 /* Externals ------------------------------------------------------------------*/
-
+extern volatile unsigned short timer_memory;
 
 /* Globals --------------------------------------------------------------------*/
 
@@ -180,6 +180,9 @@ void MEM_SectorErase (unsigned int addr)
     MEM_SetByte(0x2AA, 0x55);
 
     MEM_SetByte(addr, 0x30);
+    timer_memory = 800;
+    while (timer_memory);
+    
 }
 
 
@@ -191,6 +194,10 @@ void MEM_ChipErase (void)
     MEM_SetByte(0x555, 0xAA);
     MEM_SetByte(0x2AA, 0x55);
     MEM_SetByte(0x555, 0x10);
+
+    timer_memory = 800;
+    while (timer_memory);
+
 }
 
 //--- end of file ---//

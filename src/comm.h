@@ -18,8 +18,9 @@
 //--- Exported constants ---//
 typedef enum {
 	resp_ok = 0,
-	resp_not_own,
-	resp_error
+	resp_continue,
+	resp_error,
+        resp_timeout
 
 } resp_t;
 

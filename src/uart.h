@@ -45,7 +45,8 @@ void USART1_IRQHandler(void);
 void Usart1Send (char *);
 void Usart1SendUnsigned(unsigned char *, unsigned char);
 void Usart1SendSingle(unsigned char );
-
+void Usart1ToBinary (unsigned char);
+void Usart1ToText (void);
 
 #endif    /* _UART_H_ */
 

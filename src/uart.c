@@ -36,6 +36,7 @@ volatile unsigned char * ptx1_pckt_index;
 volatile unsigned char * prx1;
 volatile unsigned char tx1buff[SIZEOF_TXDATA];
 volatile unsigned char rx1buff[SIZEOF_RXDATA];
+volatile unsigned char usart1_chunk_data = 0;
 
 void (* pUsartHandler) (unsigned char);
 
@@ -214,10 +215,28 @@ void UsartIntBinaryHandler (unsigned char rx_data)
     else
         prx1 = rx1buff;    //soluciona problema bloqueo con garbage
 
-    usart1_have_data = 1;
+    if ((prx1 - rx1buff) >= usart1_chunk_data)
+        usart1_have_data = 1;
+    
     usart1_timeout = USART_TT_FOR_BINARY;
 }
 
+
+void Usart1ToBinary (unsigned char qtty)
+{
+    prx1 = rx1buff;
+    usart1_have_data = 0;
+    usart1_chunk_data = qtty;
+    pUsartHandler = UsartIntBinaryHandler;
+}
+
+
+void Usart1ToText (void)
+{
+    prx1 = rx1buff;
+    usart1_have_data = 0;
+    pUsartHandler = UsartIntTextHandler;
+}
 
 
 //--- end of file ---//
