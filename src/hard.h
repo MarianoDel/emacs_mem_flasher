@@ -35,6 +35,11 @@
 // #define HARD_TEST_MODE_MEMORY_ERASE
 #define PRODUCTION_PROGRAM
 
+//---- Specific Test for memory and comms routines -----------------------
+// #define MEMORY_TEST_SEND_KNOW_PATTERN
+// #define MEMORY_TEST_SEND_KNOW_PATTERN_0X55
+// #define MEMORY_TEST_SEND_KNOW_PATTERN_0XAA
+
 //---- Features Configuration ----------------
 // #define USE_LED_ON_EACH_CYCLE
 // #define USE_LED_IN_PROT

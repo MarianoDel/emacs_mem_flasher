@@ -37,6 +37,8 @@ unsigned char MEM_GetManufacturer (silicon_t * m_info)
     MEM_SetByte(0x555, 0x90);
 
     m_info->manufacturer = MEM_ReadByte(0x00);
+    MEM_Reset();
+        
     return resp_ok;
 }
 
@@ -47,9 +49,9 @@ unsigned char MEM_GetSilicon (silicon_t * m_info)
     MEM_SetByte(0x2AA, 0x55);
     MEM_SetByte(0x555, 0x90);
 
-    LED_ON;
     m_info->silicon = MEM_ReadByte(0x01);
-    LED_OFF;
+    MEM_Reset();
+    
     return resp_ok;
 }
 

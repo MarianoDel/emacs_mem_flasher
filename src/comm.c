@@ -364,7 +364,8 @@ typedef enum {
 #define STOP 0x02
 #define ENDED 0x04
 #define SIZEOF_MEM_BUFFER    16
-#define CHUNK_SIZE    1024
+// #define CHUNK_SIZE    1024
+#define CHUNK_SIZE    SIZEOF_MEM_BUFFER
 #define TT_BINARY    10000
 resp_t COMM_ReadAllMem (void)
 {
@@ -475,13 +476,23 @@ unsigned short COMM_SendBinary (unsigned int addr, unsigned short qtty, unsigned
     while ((orig_addr + qtty) > addr)
     {
         for (unsigned char i = 0; i < SIZEOF_MEM_BUFFER; i++)
+        {
+#if defined MEMORY_TEST_SEND_KNOW_PATTERN
+            data[i] = i;
+#elif defined MEMORY_TEST_SEND_KNOW_PATTERN_0X55
+            data[i] = 0x55;
+#elif defined MEMORY_TEST_SEND_KNOW_PATTERN_0XAA
+            data[i] = 0xAA;
+#else
             data[i] = MEM_ReadByte(addr + i);
+#endif
+        }
 
         Usart1SendUnsigned(data, SIZEOF_MEM_BUFFER);
         crc = Compute_CRC16_Simple (data, SIZEOF_MEM_BUFFER, crc);
         addr += SIZEOF_MEM_BUFFER;
 
-        Wait_ms(2);    //1.38ms to send
+        Wait_ms(10);    //1.38ms to send
     }
 
     return crc;
@@ -664,7 +675,7 @@ void COMM_ReadAddress (unsigned int addr, unsigned int bytes)
             data[i] = MEM_ReadByte(addr + i);
         }
 
-        sprintf(string_data, "addr: %d data: %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",
+        sprintf(string_data, "addr: %d data: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
                 addr,
                 data[0],
                 data[1],
